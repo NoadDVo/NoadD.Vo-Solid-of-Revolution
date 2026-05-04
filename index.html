@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoadD.Vo Solid of Revolution Studio</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            --bg-main: #0f1115;
+            --bg-sidebar: #181a20;
+            --bg-card: #22252b;
+            --border-color: #2a2d35;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --primary: #4facfe;
+            --primary-hover: #00f2fe;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --warning: #ffa502;
+            --purple: #9c88ff;
+            --math-bg: rgba(0,0,0,0.3);
+            --header-h: 56px;
+        }
+
+        /* Chế độ Sáng / Máy Chiếu */
+        body.light-theme {
+            --bg-main: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: #f1f5f9;
+            --border-color: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --math-bg: rgba(0,0,0,0.05);
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg-main); color: var(--text-main); 
+            transition: background-color 0.3s, color 0.3s;
+            display: flex; flex-direction: column; height: 100vh;
+        }
+
+        /* Top Navbar */
+        #top-navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            height: var(--header-h); padding: 0 24px; background-color: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border-color); z-index: 100; transition: background-color 0.3s;
+        }
+        .nav-brand { font-size: 1.25rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.5px; }
+        .nav-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+        .nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .nav-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Bố cục chính */
+        #app-layout { display: flex; flex: 1; width: 100vw; overflow: hidden; }
+
+        /* Thanh bên (Sidebar) */
+        aside { background: var(--bg-sidebar); display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.3s; position: relative; z-index: 10; overflow: hidden; }
+        
+        #left-sidebar { width: 350px; min-width: 350px; border-right: 1px solid var(--border-color); }
+        #left-sidebar.collapsed { width: 0; min-width: 0; border-right: none; opacity: 0; }
+        
+        #right-sidebar { width: 380px; min-width: 380px; border-left: 1px solid var(--border-color); }
+        #right-sidebar.collapsed { width: 0; min-width: 0; border-left: none; opacity: 0; }
+
+        .sidebar-inner { width: 100%; min-width: 340px; display: flex; flex-direction: column; height: 100%; }
+
+        /* Vùng hiển thị 3D */
+        #center-view { flex: 1; position: relative; background: var(--bg-main); overflow: hidden; display: flex; justify-content: center; align-items: center; transition: background-color 0.3s; }
+        #canvas-container { width: 100%; height: 100%; display: block; }
+
+        .toggle-btn { position: absolute; top: 20px; z-index: 50; background: var(--bg-sidebar); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .toggle-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+        #toggleLeftBtn { left: 20px; } #toggleRightBtn { right: 20px; }
+
+        /* Thanh điều khiển nổi */
+        .floating-controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(24, 26, 32, 0.85); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 50px; padding: 10px 24px; display: flex; align-items: center; gap: 20px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.3); color: var(--text-main); transition: background-color 0.3s, box-shadow 0.3s; }
+        body.light-theme .floating-controls { background: rgba(255, 255, 255, 0.85); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .float-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; }
+        .float-divider { width: 1px; height: 24px; background: var(--border-color); }
+        .floating-controls input[type="range"] { width: 120px; margin: 0; cursor: pointer; accent-color: var(--primary); transition: opacity 0.3s; }
+        .floating-controls input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; margin: 0;}
+        .float-btn { background: var(--primary); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .float-btn:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .float-btn.play { background: var(--danger); }
+        .float-btn.fit { background: var(--purple); }
+        .float-btn.reset { background: var(--success); }
+
+        .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; transition: background-color 0.3s; display: flex; justify-content: space-between; align-items: center;}
+        .sidebar-header h3 { margin: 0; font-size: 15px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* Bảng nhập nhanh */
+        .quick-paste-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 16px; transition: background-color 0.3s, border-color 0.3s; }
+        .quick-paste-box textarea { width: 100%; height: 70px; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; resize: vertical; font-family: 'Fira Code', monospace; font-size: 12px; transition: border-color 0.2s, background-color 0.3s, color 0.3s; }
+        .quick-paste-box textarea:focus { outline: none; border-color: var(--primary); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Tabs */
+        .tabs { display: flex; margin-bottom: 12px; border-radius: 8px; overflow: hidden; background: var(--bg-main); border: 1px solid var(--border-color); padding: 4px; gap: 4px; }
+        .tab-btn { flex: 1; padding: 10px; background: transparent; color: var(--text-muted); border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.3s; }
+        .tab-btn.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .tab-btn:hover:not(.active) { color: var(--text-main); }
+        .functions-container { display: none; animation: fadeIn 0.3s ease; }
+        .functions-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards */
+        .func-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; transition: transform 0.2s, background-color 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .func-card:hover { border-color: rgba(79, 172, 254, 0.5); }
+        .func-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: 600; color: var(--text-main); font-size: 14px; flex-wrap: wrap; gap: 8px;}
+        .delete-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; padding: 2px 6px; transition: 0.2s; border-radius: 4px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+        .delete-btn:hover { color: var(--danger); background: rgba(255, 71, 87, 0.1); }
+
+        /* Inputs */
+        .input-row { display: flex; align-items: center; margin-bottom: 10px; }
+        .input-row label { width: 50px; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        input[type="text"], input[type="number"] { flex-grow: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); font-family: 'Fira Code', monospace; font-size: 13px; width: 100%; transition: border-color 0.2s, background-color 0.3s, color 0.3s; }
+        input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: var(--primary); }
+        .bounds-row { display: flex; justify-content: space-between; gap: 12px; }
+        .bounds-row .input-row { width: 48%; margin-bottom: 0; }
+        input[type="color"] { width: 32px; height: 32px; padding: 0; border: none; border-radius: 6px; cursor: pointer; background: none; }
+        
+        .individual-angle-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); animation: fadeIn 0.3s ease; }
+
+        /* Buttons */
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        button.action-btn { padding: 12px; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        button.action-btn.secondary { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); }
+        button.action-btn.secondary:hover { background: var(--border-color); }
+        button.action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        button.action-btn:active { transform: translateY(0); }
+        button.action-btn.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); }
+        button.action-btn.graph { background: linear-gradient(135deg, var(--purple) 0%, #8c7ae6 100%); width: 100%; grid-column: span 2; }
+        button.action-btn.latex { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
+
+        /* Results & Scratchpad */
+        .result-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; transition: background-color 0.3s; margin-bottom: 16px; }
+        .result-title { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600; text-transform: uppercase;}
+        .math-display { font-size: 15px; margin: 12px 0; color: var(--text-main); padding: 10px; background: var(--math-bg); border-radius: 6px; text-align: center; overflow-x: auto; transition: background-color 0.3s, color 0.3s;}
+        .math-display.vol { border-left: 4px solid var(--success); }
+        .math-display.area { border-left: 4px solid var(--warning); }
+
+        .scratchpad { width: 100%; height: 100px; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; resize: vertical; font-family: inherit; font-size: 13px; transition: border-color 0.2s, background-color 0.3s, color 0.3s; }
+        .scratchpad:focus { outline: none; border-color: var(--primary); }
+        .author-link { color: var(--primary); text-decoration: none; transition: color 0.2s; }
+        .author-link:hover { color: var(--primary-hover); text-decoration: underline; }
+
+        /* Modal 2D */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 1; transition: opacity 0.3s; }
+        .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+        .modal-content { background: var(--bg-sidebar); padding: 24px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 20px 40px rgba(0,0,0,0.3); display: flex; gap: 24px; color: var(--text-main); transform: scale(1); transition: transform 0.3s; }
+        .modal-overlay.hidden .modal-content { transform: scale(0.95); }
+        .modal-sidebar { width: 280px; display: flex; flex-direction: column; gap: 12px; }
+        .modal-sidebar h4 { margin: 10px 0 5px 0; color: var(--primary); font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-sidebar textarea { background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; height: 100px; resize: none; font-family: 'Fira Code', monospace; font-size: 12px; transition: 0.3s;}
+        #profileCanvas { background: #fff; border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); touch-action: none; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
+        #closeModalBtn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; margin-top: 10px;}
+        #closeModalBtn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+        
+        #toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--success); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 3000; pointer-events: none; box-shadow: 0 10px 20px rgba(46, 213, 115, 0.2); }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <nav id="top-navbar">
+        <div class="nav-brand">NoadD.Vo Solid of Revolution</div>
+        <div class="nav-actions">
+            <button id="toggleThemeBtn" class="nav-btn" title="Đổi giao diện Sáng / Tối">🌓 Giao diện</button>
+            <button id="saveWorkspaceBtn" class="nav-btn" title="Lưu lại cấu hình hệ thống">💾 Lưu Cấu Hình</button>
+        </div>
+    </nav>
+
+    <div id="app-layout">
+        
+        <!-- CỘT TRÁI: Phân Tích & Xuất Dữ Liệu -->
+        <aside id="left-sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <h3>Phân Tích & Xuất</h3>
+                </div>
+                <div class="sidebar-content">
+
+                    <div class="btn-group" style="margin-bottom: 24px;">
+                        <button id="downloadLatexFileBtn" class="action-btn secondary" style="grid-column: span 2; background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; border: none;">📥 Tải File LaTeX (.tex) Gồm 2D & 3D</button>
+                        <button id="exportBtn" class="action-btn primary" style="grid-column: span 2;">📸 Tải Ảnh PNG Khối 3D</button>
+                        <button id="exportLatex3DBtn" class="action-btn latex">📜 Copy LaTeX 3D</button>
+                        <button id="exportManimBtn" class="action-btn" style="background: linear-gradient(135deg, #3776AB 0%, #1f425f 100%);">🐍 Copy Manim</button>
+                        <button id="show2DBtn" class="action-btn graph">📊 Xem Đồ Thị 2D & Zoom</button>
+                    </div>
+
+                    <div class="result-box">
+                        <div class="result-title">Kết quả Tính toán</div>
+                        <div id="formulaV" class="math-display vol"></div>
+                        <div id="formulaS" class="math-display area"></div>
+                    </div>
+
+                    <div class="result-box" style="margin-top: 16px;">
+                        <div class="result-title">📝 Bảng Nháp</div>
+                        <textarea id="scratchpad" class="scratchpad" placeholder="Ghi chú công thức, ý tưởng, lưu ý..."></textarea>
+                    </div>
+
+                    <div class="result-box" style="margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+                        <div class="result-title">👨‍💻 Giới Thiệu Tác Giả</div>
+                        <div style="margin-bottom: 6px;"><strong>Name:</strong> <span style="color: var(--text-main);">NoadD.Vo</span></div>
+                        <div style="margin-bottom: 6px;"><strong>Gmail:</strong> <span style="color: var(--text-main);">dangnguyen402042@gmail.com</span></div>
+                        <div style="margin-bottom: 6px;"><strong>Phone:</strong> <span style="color: var(--text-main);">0975204867</span></div>
+                        <div style="margin-bottom: 6px;"><strong>Facebook:</strong> <a href="https://www.facebook.com/nguyene.vox" target="_blank" class="author-link">nguyene.vox</a></div>
+                        
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <span>👁️ Lượt truy cập hôm nay:</span>
+                            <span id="daily-visits" style="background: rgba(79, 172, 254, 0.1); color: var(--primary); padding: 2px 10px; border-radius: 12px; font-weight: bold;">--</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </aside>
+
+        <!-- VÙNG GIỮA: 3D CANVAS -->
+        <main id="center-view">
+            <button id="toggleLeftBtn" class="toggle-btn" title="Đóng/Mở Bảng Phân Tích"><span>☰</span> Phân Tích</button>
+            <button id="toggleRightBtn" class="toggle-btn" title="Đóng/Mở Bảng Thiết Lập">Thiết Lập <span>⚙️</span></button>
+            
+            <div class="floating-controls">
+                <button id="playBtn" class="float-btn play" title="Phát/Tạm dừng">▶</button>
+                <button id="fitCameraBtn" class="float-btn fit" title="Tự động vừa vặn góc nhìn vật thể">🎯</button>
+                <button id="resetCameraBtn" class="float-btn reset" title="Reset góc nhìn">⟲</button>
+                
+                <div class="float-item" style="margin-left: 10px;">
+                    <input type="range" id="angleSlider" min="1" max="360" value="360">
+                    <span id="angleVal" style="width: 40px; display: inline-block;">360°</span>
+                </div>
+                
+                <div class="float-item">
+                    <label title="Áp dụng cùng góc xoay cho tất cả các hàm" style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <input type="checkbox" id="useGlobalAngle" checked> Chung
+                    </label>
+                </div>
+
+                <div class="float-divider"></div>
+
+                <div class="float-item">
+                    <label title="Hiển thị lưới tọa độ" style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <input type="checkbox" id="toggleGrid" checked> 🌐 Lưới
+                    </label>
+                </div>
+
+                <div class="float-item">
+                    <label title="Hiển thị trục tọa độ" style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <input type="checkbox" id="toggleAxes" checked> 📏 Trục
+                    </label>
+                </div>
+
+                <div class="float-item">
+                    <label title="Hiển thị khối dưới dạng khung dây" style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <input type="checkbox" id="toggleWireframe"> 🕸️ Khung
+                    </label>
+                </div>
+            </div>
+
+            <div id="canvas-container"></div>
+        </main>
+
+        <!-- CỘT PHẢI: Thiết Lập Hàm -->
+        <aside id="right-sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <h3>Toán Học 3D</h3>
+                    <div style="display: flex; gap: 6px;">
+                        <button id="undoBtn" class="nav-btn" style="padding: 4px 8px; font-size: 14px;" title="Quay lại (Undo)" disabled>↩️</button>
+                        <button id="redoBtn" class="nav-btn" style="padding: 4px 8px; font-size: 14px;" title="Tiến tới (Redo)" disabled>↪️</button>
+                    </div>
+                </div>
+                <div class="sidebar-content">
+                    
+                    <!-- BẢNG DÁN NHANH HÀM SỐ -->
+                    <div class="quick-paste-box">
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-main); display: flex; justify-content: space-between;">
+                            <span>⚡ Nhập Nhanh Hàm Số</span>
+                            <span title="Định dạng: Công_thức ; Min ; Max&#10;Ví dụ:&#10;sqrt(x) ; 0 ; 4&#10;y = x^2 ; -2 ; 2" style="cursor: help; color: var(--primary);">[?]</span>
+                        </div>
+                        <textarea id="quickPasteInput" placeholder="Dán hàm tại đây... (Mỗi dòng 1 hàm)&#10;Định dạng: Công thức ; Min ; Max&#10;VD: x^2 + 2x ; -1 ; 3"></textarea>
+                        <button id="applyQuickPasteBtn" class="action-btn primary" style="width: 100%; padding: 8px; margin-top: 8px;">🚀 Chuyển thành Hàm</button>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <button id="clearUnpinnedBtn" class="action-btn secondary" style="width: 100%; padding: 8px; font-size: 12px; color: var(--danger); border-color: var(--danger);">
+                            🗑️ Dọn dẹp (Xóa các hàm không ghim 📌)
+                        </button>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" data-target="y-funcs">Quay quanh Oy</button>
+                        <button class="tab-btn" data-target="x-funcs">Quay quanh Ox</button>
+                    </div>
+                    <div class="functions-wrapper">
+                        <div class="functions-container active" id="y-funcs">
+                            <div id="y-funcs-list"></div>
+                            <button class="add-func-btn action-btn secondary" data-type="y" style="width: 100%; margin-top: 10px; border-style: dashed;">➕ Thêm Hàm Quay Oy</button>
+                        </div>
+                        <div class="functions-container" id="x-funcs">
+                            <div id="x-funcs-list"></div>
+                            <button class="add-func-btn action-btn secondary" data-type="x" style="width: 100%; margin-top: 10px; border-style: dashed;">➕ Thêm Hàm Quay Ox</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MODAL 2D NÂNG CAO -->
+    <div id="modal2D" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-sidebar">
+                <div class="modal-header">
+                    <h2 style="margin:0; font-size: 18px; color:var(--primary);">Cài Đặt Đồ Thị 2D</h2>
+                </div>
+                
+                <h4>Tên trục tọa độ</h4>
+                <div class="bounds-row">
+                    <div class="input-row"><label>Tên X</label><input type="text" id="gXLabel" value="x"></div>
+                    <div class="input-row"><label>Tên Y</label><input type="text" id="gYLabel" value="y"></div>
+                </div>
+
+                <h4>Giới hạn trục tọa độ</h4>
+                <div class="bounds-row">
+                    <div class="input-row"><label>X min</label><input type="number" id="gXmin" value="-1" step="0.5"></div>
+                    <div class="input-row"><label>X max</label><input type="number" id="gXmax" value="5" step="0.5"></div>
+                </div>
+                <div class="bounds-row">
+                    <div class="input-row"><label>Y min</label><input type="number" id="gYmin" value="-1" step="0.5"></div>
+                    <div class="input-row"><label>Y max</label><input type="number" id="gYmax" value="5" step="0.5"></div>
+                </div>
+
+                <h4>Điểm tùy chỉnh</h4>
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Định dạng: x, y, Tên điểm</div>
+                <textarea id="customPoints" spellcheck="false">0, 0, D
+4, 0, A
+2, 0, M
+4, 4, B
+0, 4, C
+2, 2, I
+4, 2, N</textarea>
+                
+                <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+                    <button id="updateGraphBtn" class="action-btn primary">🔄 Cập nhật Đồ thị</button>
+                    <button id="export2DPNGBtn" class="action-btn" style="background: linear-gradient(135deg, #10ac84 0%, #2ecc71 100%); border: none; color: white;">📸 Tải Ảnh PNG (2D)</button>
+                    <button id="exportLatex2DBtn" class="action-btn latex">📜 Sao chép mã LaTeX (2D)</button>
+                    <button id="closeModalBtn">Đóng Bảng</button>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <canvas id="profileCanvas" width="500" height="500"></canvas>
+                <div style="margin-top: 12px; font-size: 13px; color: var(--text-muted);">
+                    💡 Cuộn chuột (Scroll) trên khu vực đồ thị để Zoom (Thu phóng)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Thông báo!</div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let isLightTheme = false;
+        let isPlaying = false;
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        // --- HỆ THỐNG LỊCH SỬ (UNDO / REDO) ---
+        let appHistory = [];
+        let historyIndex = -1;
+        let isRestoring = false;
+
+        function getCurrentState() {
+            const data = { y: [], x: [] };
+            ['y', 'x'].forEach(type => {
+                const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                cards.forEach(card => {
+                    const id = card.dataset.id;
+                    data[type].push({
+                        id: id,
+                        enable: document.getElementById(`enable_${id}`).checked,
+                        color: document.getElementById(`color_${id}`).value,
+                        func: document.getElementById(`func_${id}`).value,
+                        min: document.getElementById(`min_${id}`).value,
+                        max: document.getElementById(`max_${id}`).value,
+                        angle: document.getElementById(`angle_${id}`) ? document.getElementById(`angle_${id}`).value : "360",
+                        group: document.getElementById(`group_${id}`) ? document.getElementById(`group_${id}`).value : "",
+                        isLocked: document.getElementById(`lock_${id}`) ? document.getElementById(`lock_${id}`).checked : false
+                    });
+                });
+            });
+            return JSON.stringify(data);
+        }
+
+        function updateUndoRedoUI() {
+            document.getElementById('undoBtn').disabled = historyIndex <= 0;
+            document.getElementById('redoBtn').disabled = historyIndex >= appHistory.length - 1;
+        }
+
+        function saveState() {
+            if (isRestoring) return;
+            const state = getCurrentState();
+            if (historyIndex >= 0 && appHistory[historyIndex] === state) return;
+
+            if (historyIndex < appHistory.length - 1) {
+                appHistory = appHistory.slice(0, historyIndex + 1);
+            }
+            appHistory.push(state);
+            if (appHistory.length > 30) appHistory.shift(); else historyIndex++;
+            updateUndoRedoUI();
+        }
+
+        function restoreState(index) {
+            if (index < 0 || index >= appHistory.length) return;
+            isRestoring = true;
+            const state = JSON.parse(appHistory[index]);
+            
+            document.getElementById('y-funcs-list').innerHTML = '';
+            document.getElementById('x-funcs-list').innerHTML = '';
+            
+            let maxY = 0; let maxX = 0;
+
+            ['y', 'x'].forEach(type => {
+                state[type].forEach(f => {
+                    const idx = parseInt(f.id.split('_')[1]);
+                    if (type === 'y' && idx > maxY) maxY = idx;
+                    if (type === 'x' && idx > maxX) maxX = idx;
+
+                    const cardHTML = createFuncCard(type, idx, f.enable, f.func, f.min, f.max, f.color, f.group, f.isLocked);
+                    document.getElementById(`${type}-funcs-list`).insertAdjacentHTML('beforeend', cardHTML);
+                    
+                    setTimeout(() => {
+                        const angleEl = document.getElementById(`angle_${f.id}`);
+                        if (angleEl) angleEl.value = f.angle;
+                        const valEl = document.getElementById(`angle_val_${f.id}`);
+                        if (valEl) valEl.innerText = f.angle + "°";
+                    }, 0);
+                });
+            });
+            
+            funcCounters.y = Math.max(funcCounters.y, maxY);
+            funcCounters.x = Math.max(funcCounters.x, maxX);
+
+            updateGeometry();
+            isRestoring = false;
+            updateUndoRedoUI();
+        }
+
+        document.getElementById('undoBtn').addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; restoreState(historyIndex); } });
+        document.getElementById('redoBtn').addEventListener('click', () => { if (historyIndex < appHistory.length - 1) { historyIndex++; restoreState(historyIndex); } });
+
+        // --- 1. KHỞI TẠO GIAO DIỆN HÀM SỐ ĐỘNG ---
+        let funcCounters = { y: 0, x: 0 };
+
+        function createFuncCard(type, index, isChecked, defFunc, defMin, defMax, color, defGroup = "", isLocked = false) {
+            const id = type + '_' + index;
+            const useGlobalInput = document.getElementById('useGlobalAngle');
+            const useGlobal = useGlobalInput ? useGlobalInput.checked : true;
+            const displayStyle = useGlobal ? 'none' : 'block';
+
+            return `
+                <div class="func-card" data-id="${id}" id="card_${id}">
+                    <div class="func-header">
+                        <label style="display: flex; align-items: center; cursor: pointer; flex-grow: 1;">
+                            <input type="checkbox" id="enable_${id}" ${isChecked ? 'checked' : ''}> 
+                            <span style="margin-left: 5px; font-size: 13px;">Hàm ${type.toUpperCase()}${index}</span>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <input type="text" id="group_${id}" value="${defGroup}" placeholder="Nhãn (VD: Nắp)" title="Phân loại / Ghi chú tên phần của vật thể" style="width: 85px; padding: 4px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main);">
+                            <label style="cursor: pointer; display: flex; align-items: center; background: var(--bg-main); border: 1px solid var(--border-color); padding: 3px 6px; border-radius: 4px;" title="Ghim để không bị xóa khi dọn dẹp">
+                                <input type="checkbox" id="lock_${id}" ${isLocked ? 'checked' : ''} style="margin-right: 4px; width:12px; height:12px;"> 📌
+                            </label>
+                            <input type="color" id="color_${id}" value="${color}">
+                            <button class="delete-btn" data-target="card_${id}" title="Xóa hàm">&times;</button>
+                        </div>
+                    </div>
+                    <div class="input-row"><label>R =</label><input type="text" id="func_${id}" value="${defFunc}"></div>
+                    <div class="bounds-row">
+                        <div class="input-row"><label>Từ:</label><input type="text" id="min_${id}" value="${defMin}"></div>
+                        <div class="input-row"><label>Đến:</label><input type="text" id="max_${id}" value="${defMax}"></div>
+                    </div>
+                    
+                    <div class="individual-angle-container" style="display: ${displayStyle}; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color);">
+                        <div style="display:flex; justify-content:space-between; font-size: 12px; color: var(--text-muted); margin-bottom:4px;">
+                            <span>Góc xoay riêng:</span>
+                            <span id="angle_val_${id}" style="font-weight:bold; color:var(--primary);">360°</span>
+                        </div>
+                        <input type="range" class="individual-angle-slider" id="angle_${id}" min="1" max="360" value="360" style="width: 100%; margin:0; cursor:pointer;">
+                    </div>
+                </div>`;
+        }
+
+        function addFunctionCard(type, isChecked, defFunc, defMin, defMax, color, defGroup = "", isLocked = false) {
+            funcCounters[type]++;
+            const index = funcCounters[type];
+            document.getElementById(`${type}-funcs-list`).insertAdjacentHTML('beforeend', createFuncCard(type, index, isChecked, defFunc, defMin, defMax, color, defGroup, isLocked));
+        }
+
+        const colorsY = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff69b4'];
+        const colorsX = ['#1e90ff', '#2ed573', '#ff6b81', '#eccc68', '#a4b0be'];
+        for (let i = 1; i <= 5; i++) {
+            addFunctionCard('y', (i<=2), (i===1)?'2 + sqrt(4 - y^2)':((i===2)?'sqrt(4 - (y - 2)^2)':'0'), (i===2)?'2':'0', (i===1)?'2':((i===2)?'4':'2'), colorsY[i-1] || '#ffffff', '', false);
+            addFunctionCard('x', false, (i===1)?'sqrt(x)':'0', '0', '4', colorsX[i-1] || '#ffffff', '', false);
+        }
+        
+        setTimeout(saveState, 200);
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-btn, .functions-container').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active'); 
+                document.getElementById(e.target.dataset.target).classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.add-func-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                addFunctionCard(type, true, '0', '0', '4', randomColor);
+                updateGeometry(); saveState();
+            });
+        });
+
+        document.getElementById('right-sidebar').addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                document.getElementById(e.target.dataset.target).remove();
+                updateGeometry(); saveState();
+            }
+        });
+        
+        document.getElementById('right-sidebar').addEventListener('change', (e) => { updateGeometry(); saveState(); });
+        document.getElementById('right-sidebar').addEventListener('input', (e) => {
+            if (e.target.classList.contains('individual-angle-slider')) {
+                const id = e.target.id.replace('angle_', '');
+                const valEl = document.getElementById(`angle_val_${id}`);
+                if (valEl) valEl.innerText = e.target.value + "°";
+            }
+            updateGeometry();
+        });
+
+        // NHẬP NHANH HÀM SỐ
+        document.getElementById('applyQuickPasteBtn').addEventListener('click', () => {
+            const text = document.getElementById('quickPasteInput').value;
+            if (!text.trim()) { showToast("Vui lòng nhập công thức hàm!"); return; }
+
+            const activeTabBtn = document.querySelector('.tab-btn.active');
+            const targetId = activeTabBtn.dataset.target; 
+            const type = targetId.split('-')[0];
+
+            document.querySelectorAll(`#${targetId} .func-card`).forEach(card => {
+                const id = card.dataset.id;
+                const isLocked = document.getElementById(`lock_${id}`).checked;
+                if (!isLocked) document.getElementById(`enable_${id}`).checked = false;
+            });
+
+            const lines = text.split('\n');
+            let added = false;
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const delimiter = line.includes(';') ? ';' : ',';
+                const parts = line.split(delimiter);
+                
+                let funcStr = parts[0].trim().replace(/^.*?=\s*/, '');
+                funcStr = funcStr.replace(/(^|[^a-zA-Z])[xy](?=[^a-zA-Z]|$)/g, (match, p1) => p1 + type);
+
+                let minStr = parts.length > 1 ? parts[1].trim() : '0';
+                let maxStr = parts.length > 2 ? parts[2].trim() : '4';
+                
+                const min = minStr.replace(',', '.'); const max = maxStr.replace(',', '.');
+                const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                
+                addFunctionCard(type, true, funcStr, min, max, randomColor, "Paste Nhanh", false);
+                added = true;
+            });
+
+            if (added) {
+                updateGeometry(); saveState();
+                document.getElementById('quickPasteInput').value = '';
+                showToast(`Đã dán và tự động chuẩn hóa biến cho O${type === 'y' ? 'y' : 'x'}!`);
+            }
+        });
+
+        // DỌN DẸP
+        document.getElementById('clearUnpinnedBtn').addEventListener('click', () => {
+            let changed = false;
+            ['y', 'x'].forEach(type => {
+                const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                cards.forEach(card => {
+                    const id = card.dataset.id;
+                    const lockEl = document.getElementById(`lock_${id}`);
+                    if (!lockEl || !lockEl.checked) { card.remove(); changed = true; }
+                });
+            });
+            if (changed) { updateGeometry(); saveState(); showToast("Đã dọn dẹp xong các hàm nháp!"); } 
+            else { showToast("Không có hàm nháp nào để dọn (Tất cả đều đang ghim)!"); }
+        });
+
+        // --- 2. KHỞI TẠO 3D & RESPONSIVE CANVAS ---
+        const centerView = document.getElementById('center-view');
+        const scene = new THREE.Scene(); 
+        scene.background = new THREE.Color(0x0f1115);
+        
+        let initWidth = centerView.clientWidth || window.innerWidth - 700;
+        let initHeight = centerView.clientHeight || window.innerHeight;
+
+        const camera = new THREE.PerspectiveCamera(45, initWidth / initHeight, 0.1, 1000); 
+        camera.position.set(12, 8, 12);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true }); 
+        renderer.setSize(initWidth, initHeight); 
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6)); 
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); 
+        dirLight.position.set(10, 20, 10); 
+        scene.add(dirLight);
+        
+        let axesHelper = new THREE.Group();
+        const origin = new THREE.Vector3(0, 0, 0);
+        const axisLength = 8; const headLength = 0.6; const headWidth = 0.3;
+        axesHelper.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, axisLength, 0xff0000, headLength, headWidth)); 
+        axesHelper.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), origin, axisLength, 0x00ff00, headLength, headWidth)); 
+        axesHelper.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, axisLength, 0x0000ff, headLength, headWidth)); 
+        scene.add(axesHelper);
+        
+        let gridHelper = new THREE.GridHelper(16, 16, 0x2a2d35, 0x181a20);
+        scene.add(gridHelper);
+        
+        const controls = new OrbitControls(camera, renderer.domElement); 
+        controls.enableDamping = true;
+
+        let activeMeshes = [];
+
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const width = entry.contentRect.width;
+                const height = entry.contentRect.height;
+                if(width > 0 && height > 0) {
+                    camera.aspect = width / height;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(width, height);
+                }
+            }
+        });
+        resizeObserver.observe(centerView);
+
+        document.getElementById('toggleThemeBtn').addEventListener('click', () => {
+            isLightTheme = !isLightTheme;
+            scene.remove(gridHelper);
+            if (isLightTheme) {
+                document.body.classList.add('light-theme');
+                scene.background = new THREE.Color(0xf8fafc);
+                gridHelper = new THREE.GridHelper(16, 16, 0xcbd5e1, 0xe2e8f0);
+            } else {
+                document.body.classList.remove('light-theme');
+                scene.background = new THREE.Color(0x0f1115);
+                gridHelper = new THREE.GridHelper(16, 16, 0x2a2d35, 0x181a20);
+            }
+            gridHelper.visible = document.getElementById('toggleGrid').checked;
+            scene.add(gridHelper);
+            renderer.render(scene, camera);
+        });
+
+        document.getElementById('saveWorkspaceBtn').addEventListener('click', () => {
+            const stateJSON = getCurrentState();
+            const state = JSON.parse(stateJSON);
+            state.globals = {
+                useGlobalAngle: document.getElementById('useGlobalAngle').checked,
+                angleSlider: document.getElementById('angleSlider').value,
+                toggleGrid: document.getElementById('toggleGrid').checked,
+                toggleAxes: document.getElementById('toggleAxes').checked,
+                toggleWireframe: document.getElementById('toggleWireframe').checked,
+                toggleTheme: isLightTheme,
+                customPoints: document.getElementById('customPoints').value,
+                gXLabel: document.getElementById('gXLabel').value,
+                gYLabel: document.getElementById('gYLabel').value,
+                gXmin: document.getElementById('gXmin').value, gXmax: document.getElementById('gXmax').value,
+                gYmin: document.getElementById('gYmin').value, gYmax: document.getElementById('gYmax').value,
+                scratchpad: document.getElementById('scratchpad').value
+            };
+            const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'SolidRevolution_Workspace.json'; a.click();
+            showToast("Đã lưu cấu hình về máy!");
+        });
+
+        // 🎯 TÍNH NĂNG VỪA VẶN GÓC NHÌN (FIT VIEW)
+        document.getElementById('fitCameraBtn').addEventListener('click', () => {
+            if (activeMeshes.length === 0) return;
+            const box = new THREE.Box3();
+            activeMeshes.forEach(m => box.expandByObject(m));
+            if (box.isEmpty()) return;
+
+            const center = new THREE.Vector3(); box.getCenter(center);
+            const size = new THREE.Vector3(); box.getSize(size);
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraDistance = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.4; 
+
+            const direction = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+            if (direction.lengthSq() < 0.01) direction.set(1, 1, 1).normalize();
+            
+            camera.position.copy(center).add(direction.multiplyScalar(cameraDistance));
+            controls.target.copy(center); controls.update(); renderer.render(scene, camera);
+            showToast("Đã điều chỉnh tự động vừa vặn góc nhìn!");
+        });
+
+        // --- TOÁN HỌC ---
+        function calculateIntegral(funcStr, min, max, varName) {
+            const n = 100, h = (max - min) / n; let sum = 0;
+            try {
+                const f = (val) => { let r = math.evaluate(funcStr, { [varName]: val }); return isNaN(r) ? 0 : r * r; };
+                sum = f(min) + f(max); for (let i = 1; i < n; i++) sum += f(min + i * h) * (i % 2 === 0 ? 2 : 4);
+                return (sum * h) / 3;
+            } catch (e) { return 0; }
+        }
+
+        function calculateSurfaceIntegral(funcStr, min, max, varName) {
+            const n = 100, h = (max - min) / n; let sum = 0;
+            const delta = 1e-5;
+            try {
+                const f = (val) => { 
+                    let r = math.evaluate(funcStr, { [varName]: val }); 
+                    if (isNaN(r)) return 0;
+                    let r_plus = math.evaluate(funcStr, { [varName]: val + delta });
+                    let r_minus = math.evaluate(funcStr, { [varName]: val - delta });
+                    let dr = (isNaN(r_plus) || isNaN(r_minus)) ? 0 : (r_plus - r_minus) / (2 * delta);
+                    return Math.abs(r) * Math.sqrt(1 + dr * dr);
+                };
+                sum = f(min) + f(max); for (let i = 1; i < n; i++) sum += f(min + i * h) * (i % 2 === 0 ? 2 : 4);
+                return (sum * h) / 3;
+            } catch (e) { return 0; }
+        }
+
+        function updateGeometry() {
+            activeMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }); activeMeshes = [];
+            let totalVol = 0; let totalArea = 0;
+            const useGlobal = document.getElementById('useGlobalAngle').checked; 
+            const gAng = parseFloat(document.getElementById('angleSlider').value);
+
+            ['y', 'x'].forEach(type => {
+                const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                cards.forEach(card => {
+                    const id = card.dataset.id;
+                    if (!document.getElementById(`enable_${id}`).checked) return;
+                    try {
+                        const mn = math.evaluate(document.getElementById(`min_${id}`).value);
+                        const mx = math.evaluate(document.getElementById(`max_${id}`).value);
+                        if (mn >= mx) return;
+                        const fStr = document.getElementById(`func_${id}`).value;
+                        const individualAngleEl = document.getElementById(`angle_${id}`);
+                        const ang = useGlobal ? gAng : (individualAngleEl ? parseFloat(individualAngleEl.value) : 360);
+                        
+                        totalVol += (ang / 360) * Math.PI * calculateIntegral(fStr, mn, mx, type);
+                        totalArea += (ang / 360) * 2 * Math.PI * calculateSurfaceIntegral(fStr, mn, mx, type);
+
+                        const pts = []; for (let j = 0; j <= 60; j++) { let v = mn + (j/60)*(mx-mn), r = math.evaluate(fStr, { [type]: v }); pts.push(new THREE.Vector2(isNaN(r)?0:r, v)); }
+                        const isWireframe = document.getElementById('toggleWireframe').checked;
+                        const mesh = new THREE.Mesh(new THREE.LatheGeometry(pts, 64, 0, THREE.MathUtils.degToRad(ang)), new THREE.MeshPhysicalMaterial({ color: document.getElementById(`color_${id}`).value, transparent: true, opacity: 0.8, side: THREE.DoubleSide, roughness: 0.2, metalness: 0.1, wireframe: isWireframe }));
+                        if (type === 'x') mesh.rotation.z = -Math.PI / 2;
+                        scene.add(mesh); activeMeshes.push(mesh);
+                    } catch (e) {}
+                });
+            });
+            katex.render(`V = \\pi \\int R^2 \\,\\mathrm{d}h \\approx ${totalVol.toFixed(3)} \\text{ đvtt}`, document.getElementById('formulaV'), { throwOnError: false });
+            katex.render(`S = 2\\pi \\int R \\sqrt{1 + (R')^2} \\,\\mathrm{d}h \\approx ${totalArea.toFixed(3)} \\text{ đvdt}`, document.getElementById('formulaS'), { throwOnError: false });
+        }
+
+        // --- 3. ĐỒ THỊ 2D & ZOOM ---
+        function drawProfile2D() {
+            const canvas = document.getElementById('profileCanvas'); const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const minX = parseFloat(document.getElementById('gXmin').value), maxX = parseFloat(document.getElementById('gXmax').value);
+            const minY = parseFloat(document.getElementById('gYmin').value), maxY = parseFloat(document.getElementById('gYmax').value);
+            const scaleX = canvas.width / (maxX - minX); const scaleY = canvas.height / (maxY - minY);
+            const toX = (val) => (val - minX) * scaleX; const toY = (val) => canvas.height - (val - minY) * scaleY;
+
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+            for(let i = Math.floor(minX); i <= Math.ceil(maxX); i++) { ctx.beginPath(); ctx.moveTo(toX(i), 0); ctx.lineTo(toX(i), canvas.height); ctx.stroke(); }
+            for(let i = Math.floor(minY); i <= Math.ceil(maxY); i++) { ctx.beginPath(); ctx.moveTo(0, toY(i)); ctx.lineTo(canvas.width, toY(i)); ctx.stroke(); }
+            
+            ctx.strokeStyle = '#334155'; ctx.fillStyle = '#334155'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(toX(0), canvas.height); ctx.lineTo(toX(0), 30); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(toX(0), 15); ctx.lineTo(toX(0) - 6, 30); ctx.lineTo(toX(0) + 6, 30); ctx.closePath(); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(canvas.width - 30, toY(0)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(canvas.width - 15, toY(0)); ctx.lineTo(canvas.width - 30, toY(0) - 6); ctx.lineTo(canvas.width - 30, toY(0) + 6); ctx.closePath(); ctx.fill();
+
+            const xLabel = document.getElementById('gXLabel').value || 'x';
+            const yLabel = document.getElementById('gYLabel').value || 'y';
+            ctx.fillStyle = '#1e293b'; 
+            ctx.font = 'italic bold 16px Segoe UI';
+            let xLabelY = toY(0); if (xLabelY < 30) xLabelY = 30; if (xLabelY > canvas.height - 20) xLabelY = canvas.height - 20;
+            ctx.fillText(xLabel, canvas.width - 45, xLabelY - 15);
+            let yLabelX = toX(0); if (yLabelX < 20) yLabelX = 20; if (yLabelX > canvas.width - 40) yLabelX = canvas.width - 40;
+            ctx.fillText(yLabel, yLabelX + 15, 30);
+
+            ['y', 'x'].forEach(type => {
+                const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                cards.forEach(card => {
+                    const id = card.dataset.id;
+                    if (!document.getElementById(`enable_${id}`).checked) return;
+                    try {
+                        const mn = math.evaluate(document.getElementById(`min_${id}`).value), mx = math.evaluate(document.getElementById(`max_${id}`).value);
+                        const fStr = document.getElementById(`func_${id}`).value, color = document.getElementById(`color_${id}`).value;
+                        ctx.beginPath();
+                        if (type === 'y') {
+                            ctx.moveTo(toX(0), toY(mn));
+                            for (let v = mn; v <= mx; v += 0.05) { let r = math.evaluate(fStr, { y: v }); if(!isNaN(r)) ctx.lineTo(toX(r), toY(v)); }
+                            ctx.lineTo(toX(0), toY(mx));
+                        } else {
+                            ctx.moveTo(toX(mn), toY(0));
+                            for (let v = mn; v <= mx; v += 0.05) { let r = math.evaluate(fStr, { x: v }); if(!isNaN(r)) ctx.lineTo(toX(v), toY(r)); }
+                            ctx.lineTo(toX(mx), toY(0));
+                        }
+                        ctx.closePath();
+                        
+                        const isWireframe = document.getElementById('toggleWireframe').checked;
+                        if (isWireframe) {
+                            const pCanvas = document.createElement('canvas');
+                            pCanvas.width = 8; pCanvas.height = 8;
+                            const pCtx = pCanvas.getContext('2d');
+                            pCtx.strokeStyle = color; pCtx.lineWidth = 1;
+                            pCtx.beginPath(); pCtx.moveTo(0, 8); pCtx.lineTo(8, 0); pCtx.stroke();
+                            ctx.fillStyle = ctx.createPattern(pCanvas, 'repeat');
+                        } else {
+                            ctx.fillStyle = color + '44';
+                        }
+                        ctx.fill();
+                        ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+                    } catch (e) {}
+                });
+            });
+
+            ctx.fillStyle = '#1e293b'; ctx.font = 'bold 14px Segoe UI';
+            const ptsLines = document.getElementById('customPoints').value.split('\n');
+            ptsLines.forEach(line => {
+                const parts = line.split(',');
+                if(parts.length >= 3) {
+                    const x = parseFloat(parts[0].trim()), y = parseFloat(parts[1].trim()), label = parts[2].trim();
+                    if(!isNaN(x) && !isNaN(y)) {
+                        ctx.beginPath(); ctx.arc(toX(x), toY(y), 5, 0, Math.PI*2); ctx.fill();
+                        ctx.fillText(label, toX(x) + 8, toY(y) - 8);
+                    }
+                }
+            });
+        }
+
+        // TÍNH NĂNG ZOOM CHUỘT (Cuộn để thu phóng đồ thị)
+        const profileCanvas = document.getElementById('profileCanvas');
+        profileCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9; 
+
+            let xMin = parseFloat(document.getElementById('gXmin').value);
+            let xMax = parseFloat(document.getElementById('gXmax').value);
+            let yMin = parseFloat(document.getElementById('gYmin').value);
+            let yMax = parseFloat(document.getElementById('gYmax').value);
+
+            const rect = profileCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const dataX = xMin + (mouseX / profileCanvas.width) * (xMax - xMin);
+            const dataY = yMin + ((profileCanvas.height - mouseY) / profileCanvas.height) * (yMax - yMin);
+
+            const newXMin = dataX - (dataX - xMin) * zoomFactor;
+            const newXMax = dataX + (xMax - dataX) * zoomFactor;
+            const newYMin = dataY - (dataY - yMin) * zoomFactor;
+            const newYMax = dataY + (yMax - dataY) * zoomFactor;
+
+            document.getElementById('gXmin').value = newXMin.toFixed(2);
+            document.getElementById('gXmax').value = newXMax.toFixed(2);
+            document.getElementById('gYmin').value = newYMin.toFixed(2);
+            document.getElementById('gYmax').value = newYMax.toFixed(2);
+
+            drawProfile2D();
+        }, { passive: false });
+
+        // LOGIC KÉO THẢ ĐIỂM (DRAG & DROP 2D)
+        let draggedPointInfo = null;
+        function handlePointDragStart(e) {
+            const rect = profileCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+            
+            const minX = parseFloat(document.getElementById('gXmin').value);
+            const maxX = parseFloat(document.getElementById('gXmax').value);
+            const minY = parseFloat(document.getElementById('gYmin').value);
+            const maxY = parseFloat(document.getElementById('gYmax').value);
+            const scaleX = profileCanvas.width / (maxX - minX);
+            const scaleY = profileCanvas.height / (maxY - minY);
+            const toX = (val) => (val - minX) * scaleX;
+            const toY = (val) => profileCanvas.height - (val - minY) * scaleY;
+
+            const lines = document.getElementById('customPoints').value.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length >= 3) {
+                    const x = parseFloat(parts[0].trim()), y = parseFloat(parts[1].trim());
+                    if (!isNaN(x) && !isNaN(y)) {
+                        if (Math.hypot(toX(x) - mouseX, toY(y) - mouseY) < 15) {
+                            draggedPointInfo = { index: i, label: parts[2].trim() };
+                            profileCanvas.style.cursor = 'grabbing';
+                            if (e.cancelable) e.preventDefault();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        function handlePointDragMove(e) {
+            const rect = profileCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+
+            const minX = parseFloat(document.getElementById('gXmin').value);
+            const maxX = parseFloat(document.getElementById('gXmax').value);
+            const minY = parseFloat(document.getElementById('gYmin').value);
+            const maxY = parseFloat(document.getElementById('gYmax').value);
+            const scaleX = profileCanvas.width / (maxX - minX);
+            const scaleY = profileCanvas.height / (maxY - minY);
+
+            if (draggedPointInfo !== null) {
+                let newX = minX + (mouseX / scaleX);
+                let newY = minY + ((profileCanvas.height - mouseY) / scaleY);
+                
+                if (newX < minX) newX = minX; if (newX > maxX) newX = maxX;
+                if (newY < minY) newY = minY; if (newY > maxY) newY = maxY;
+
+                const lines = document.getElementById('customPoints').value.split('\n');
+                lines[draggedPointInfo.index] = `${newX.toFixed(2)}, ${newY.toFixed(2)}, ${draggedPointInfo.label}`;
+                document.getElementById('customPoints').value = lines.join('\n');
+                
+                drawProfile2D();
+                if (e.cancelable) e.preventDefault();
+            } else if (!e.touches) {
+                const toX = (val) => (val - minX) * scaleX;
+                const toY = (val) => profileCanvas.height - (val - minY) * scaleY;
+                const lines = document.getElementById('customPoints').value.split('\n');
+                let isHover = false;
+                for (let i = 0; i < lines.length; i++) {
+                    const parts = lines[i].split(',');
+                    if (parts.length >= 3) {
+                        const x = parseFloat(parts[0].trim()), y = parseFloat(parts[1].trim());
+                        if (!isNaN(x) && !isNaN(y) && Math.hypot(toX(x) - mouseX, toY(y) - mouseY) < 15) {
+                            isHover = true; break;
+                        }
+                    }
+                }
+                profileCanvas.style.cursor = isHover ? 'grab' : 'default';
+            }
+        }
+
+        function handlePointDragEnd() {
+            if (draggedPointInfo) profileCanvas.style.cursor = 'grab';
+            draggedPointInfo = null;
+        }
+
+        profileCanvas.addEventListener('mousedown', handlePointDragStart);
+        profileCanvas.addEventListener('mousemove', handlePointDragMove);
+        profileCanvas.addEventListener('mouseup', handlePointDragEnd);
+        profileCanvas.addEventListener('mouseleave', () => { draggedPointInfo = null; profileCanvas.style.cursor = 'default'; });
+        profileCanvas.addEventListener('touchstart', handlePointDragStart, {passive: false});
+        profileCanvas.addEventListener('touchmove', handlePointDragMove, {passive: false});
+        profileCanvas.addEventListener('touchend', handlePointDragEnd);
+
+
+        // --- 4. HÀM SAO CHÉP & XUẤT ---
+        function copyToClipboard(text, successMsg) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; textArea.style.left = "-9999px"; textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus(); textArea.select();
+            try { if (document.execCommand('copy')) showToast(successMsg); } 
+            catch (err) { console.error('Lỗi sao chép: ', err); }
+            document.body.removeChild(textArea);
+        }
+
+        function formatMathForPGF(mathStr, oldVar, newVar) { return mathStr.replace(new RegExp(oldVar, 'g'), newVar); }
+
+        function formatMathForPython(mathStr, varName) {
+            let s = mathStr.replace(/\^/g, '**');
+            s = s.replace(/\bsqrt\b/g, 'np.sqrt');
+            s = s.replace(/\bsin\b/g, 'np.sin');
+            s = s.replace(/\bcos\b/g, 'np.cos');
+            s = s.replace(/\btan\b/g, 'np.tan');
+            s = s.replace(/\bpi\b/g, 'np.pi');
+            s = s.replace(/\be\b/g, 'np.e');
+            const regex = new RegExp(`\\b${varName}\\b`, 'g');
+            s = s.replace(regex, 'v');
+            return s;
+        }
+
+        function getLatex2D() {
+            const minX = document.getElementById('gXmin').value, maxX = document.getElementById('gXmax').value;
+            const minY = document.getElementById('gYmin').value, maxY = document.getElementById('gYmax').value;
+            const xLabel = document.getElementById('gXLabel').value || 'x';
+            const yLabel = document.getElementById('gYLabel').value || 'y';
+            let tex = `% Mã TikZ/PGFPlots 2D được sinh bởi NoadD.Vo Studio\n\\begin{tikzpicture}\n\\begin{axis}[\n`;
+            tex += `    axis lines = middle,\n    xlabel = {$${xLabel}$}, ylabel = {$${yLabel}$},\n`;
+            tex += `    xmin=${minX}, xmax=${maxX}, ymin=${minY}, ymax=${maxY},\n`;
+            tex += `    grid = both, minor tick num = 1,\n    enlargelimits = false,\n    axis line style={shorten >=-10pt, shorten <=-10pt},\n]\n\n`;
+            ['y', 'x'].forEach(type => {
+                const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                cards.forEach(card => {
+                    const id = card.dataset.id;
+                    if (!document.getElementById(`enable_${id}`).checked) return;
+                    try {
+                        const mn = math.evaluate(document.getElementById(`min_${id}`).value), mx = math.evaluate(document.getElementById(`max_${id}`).value);
+                        const rawF = document.getElementById(`func_${id}`).value;
+                        const pgfF = formatMathForPGF(rawF, type, 'x'); 
+                        const hex = document.getElementById(`color_${id}`).value.toUpperCase();
+                        tex += `\\definecolor{color${id}}{HTML}{${hex.substring(1)}}\n`;
+                        if (type === 'y') tex += `\\addplot [domain=${mn}:${mx}, samples=100, color=color${id}, fill=color${id}!30, thick] ({${pgfF}}, {x}) \\closedcycle;\n`;
+                        else tex += `\\addplot [domain=${mn}:${mx}, samples=100, color=color${id}, fill=color${id}!30, thick] {${pgfF}} \\closedcycle;\n`;
+                    } catch(e){}
+                });
+            });
+            tex += `\n% Custom Points\n`;
+            document.getElementById('customPoints').value.split('\n').forEach(line => {
+                const parts = line.split(',');
+                if(parts.length >= 3) {
+                    const x = parts[0].trim(), y = parts[1].trim(), label = parts[2].trim();
+                    tex += `\\node[label={45:$${label}$}, circle, fill, inner sep=1.5pt] at (axis cs: ${x}, ${y}) {};\n`;
+                }
+            });
+            tex += `\\end{axis}\n\\end{tikzpicture}`;
+            return tex;
+        }
+
+        function getLatex3D() {
+            let tex = `% Mã PGFPlots 3D (Khối tròn xoay) được sinh bởi NoadD.Vo Studio\n\\begin{tikzpicture}\n\\begin{axis}[\n`;
+            tex += `    view={35}{30},\n    axis lines=center,\n    xlabel=$x$, ylabel=$z$, zlabel=$y$, % Tọa độ PGFPlots: z là trục đứng\n`;
+            tex += `    enlargelimits, tick label style={font=\\scriptsize},\n    colormap/viridis,\n]\n\n`;
+            const useGlobal = document.getElementById('useGlobalAngle').checked; 
+            const gAng = parseFloat(document.getElementById('angleSlider').value);
+            ['y', 'x'].forEach(type => {
+                const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                cards.forEach(card => {
+                    const id = card.dataset.id;
+                    if (!document.getElementById(`enable_${id}`).checked) return;
+                    try {
+                        const mn = math.evaluate(document.getElementById(`min_${id}`).value), mx = math.evaluate(document.getElementById(`max_${id}`).value);
+                        const rawF = document.getElementById(`func_${id}`).value;
+                        const pgfF = formatMathForPGF(rawF, type, 'x'); 
+                        const individualAngleEl = document.getElementById(`angle_${id}`);
+                        const ang = useGlobal ? gAng : (individualAngleEl ? parseFloat(individualAngleEl.value) : 360);
+                        const hex = document.getElementById(`color_${id}`).value.toUpperCase();
+                        tex += `\\definecolor{color${id}}{HTML}{${hex.substring(1)}}\n% Hàm R = ${rawF}\n`;
+                        if (type === 'y') {
+                            tex += `\\addplot3[surf, z buffer=sort, domain=${mn}:${mx}, y domain=0:${ang}, samples=30, samples y=40, color=color${id}, opacity=0.8, faceted color=black!60]\n    ({(${pgfF}) * cos(y)}, {(${pgfF}) * sin(y)}, {x});\n\n`;
+                        } else {
+                            tex += `\\addplot3[surf, z buffer=sort, domain=${mn}:${mx}, y domain=0:${ang}, samples=30, samples y=40, color=color${id}, opacity=0.8, faceted color=black!60]\n    ({x}, {(${pgfF}) * cos(y)}, {(${pgfF}) * sin(y)});\n\n`;
+                        }
+                    } catch(e){}
+                });
+            });
+            tex += `\\end{axis}\n\\end{tikzpicture}`;
+            return tex;
+        }
+
+        function getManimCode() {
+            let tex = `# Mã Python (Manim) được sinh bởi NoadD.Vo Studio\n`;
+            tex += `from manim import *\nimport numpy as np\n\n`;
+            tex += `class SolidOfRevolution(ThreeDScene):\n`;
+            tex += `    def construct(self):\n`;
+            tex += `        self.set_camera_orientation(phi=75 * DEGREES, theta=30 * DEGREES)\n`;
+            tex += `        axes = ThreeDAxes()\n`;
+            tex += `        self.add(axes)\n\n`;
+            const useGlobal = document.getElementById('useGlobalAngle').checked; 
+            const gAng = parseFloat(document.getElementById('angleSlider').value);
+            ['y', 'x'].forEach(type => {
+                const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                cards.forEach(card => {
+                    const id = card.dataset.id;
+                    if (!document.getElementById(`enable_${id}`).checked) return;
+                    try {
+                        const mn = math.evaluate(document.getElementById(`min_${id}`).value);
+                        const mx = math.evaluate(document.getElementById(`max_${id}`).value);
+                        const rawF = document.getElementById(`func_${id}`).value;
+                        const pyF = formatMathForPython(rawF, type); 
+                        const individualAngleEl = document.getElementById(`angle_${id}`);
+                        const ang = useGlobal ? gAng : (individualAngleEl ? parseFloat(individualAngleEl.value) : 360);
+                        const hex = document.getElementById(`color_${id}`).value.toUpperCase();
+                        tex += `        # Hàm R = ${rawF}\n`;
+                        tex += `        surface_${id} = Surface(\n`;
+                        tex += `            lambda u, v: np.array([\n`;
+                        if (type === 'y') {
+                            tex += `                (${pyF}) * np.cos(u),\n`;
+                            tex += `                v,\n`;
+                            tex += `                (${pyF}) * np.sin(u)\n`;
+                        } else {
+                            tex += `                v,\n`;
+                            tex += `                (${pyF}) * np.cos(u),\n`;
+                            tex += `                (${pyF}) * np.sin(u)\n`;
+                        }
+                        tex += `            ]),\n`;
+                        tex += `            u_range=[0, ${ang} * DEGREES],\n`;
+                        tex += `            v_range=[${mn}, ${mx}],\n`;
+                        tex += `            checkerboard_colors=["${hex}", "${hex}"],\n`;
+                        tex += `            fill_opacity=0.8,\n`;
+                        tex += `            resolution=(30, 40)\n`;
+                        tex += `        )\n`;
+                        tex += `        self.add(surface_${id})\n\n`;
+                    } catch(e){}
+                });
+            });
+            tex += `        self.begin_ambient_camera_rotation(rate=0.1)\n`;
+            tex += `        self.wait(5)\n`;
+            return tex;
+        }
+
+        document.getElementById('exportLatex2DBtn').addEventListener('click', () => { copyToClipboard(getLatex2D(), "Đã sao chép mã LaTeX 2D!"); });
+        document.getElementById('exportLatex3DBtn').addEventListener('click', () => { copyToClipboard(getLatex3D(), "Đã sao chép mã LaTeX 3D!"); });
+        document.getElementById('exportManimBtn').addEventListener('click', () => { copyToClipboard(getManimCode(), "Đã sao chép mã Python (Manim)!"); });
+        document.getElementById('export2DPNGBtn').addEventListener('click', () => {
+            const canvas = document.getElementById('profileCanvas');
+            const link = document.createElement('a');
+            link.download = 'NoadDVo-2D-Graph.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast("Đã tải ảnh đồ thị 2D!");
+        });
+        document.getElementById('downloadLatexFileBtn').addEventListener('click', () => {
+            const content = `\\documentclass{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{pgfplots}\n\\usepackage{xcolor}\n\\pgfplotsset{compat=1.18}\n\\begin{document}\n\n\\section*{1. Đo thi 2D}\n\\begin{center}\n${getLatex2D()}\n\\end{center}\n\n\\vspace{1cm}\n\\section*{2. Mo hinh 3D}\n\\begin{center}\n${getLatex3D()}\n\\end{center}\n\n\\end{document}`;
+            const blob = new Blob([content], {type: 'text/plain;charset=utf-8'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ToanHoc_LaTeX.tex';
+            a.click();
+            showToast("Đã tải file LaTeX (.tex)!");
+        });
+
+        // --- 5. LẮNG NGHE SỰ KIỆN GIAO DIỆN ---
+        const handleControlsInput = (e) => {
+            if (e.target.id === 'angleSlider') document.getElementById('angleVal').innerText = e.target.value + "°";
+            if (e.target.id === 'useGlobalAngle') {
+                const isGlobal = e.target.checked;
+                const mainSlider = document.getElementById('angleSlider');
+                mainSlider.disabled = !isGlobal;
+                mainSlider.style.opacity = isGlobal ? '1' : '0.3';
+                document.querySelectorAll('.individual-angle-container').forEach(el => {
+                    el.style.display = isGlobal ? 'none' : 'block';
+                });
+            }
+            if (e.target.id !== 'toggleGrid' && e.target.id !== 'toggleWireframe' && e.target.id !== 'toggleAxes') updateGeometry();
+        };
+        document.querySelector('.floating-controls').addEventListener('input', handleControlsInput);
+
+        document.getElementById('toggleGrid').addEventListener('change', (e) => {
+            gridHelper.visible = e.target.checked;
+            renderer.render(scene, camera);
+        });
+        document.getElementById('toggleAxes').addEventListener('change', (e) => {
+            axesHelper.visible = e.target.checked;
+            renderer.render(scene, camera);
+        });
+        document.getElementById('toggleWireframe').addEventListener('change', (e) => {
+            activeMeshes.forEach(mesh => { mesh.material.wireframe = e.target.checked; });
+            renderer.render(scene, camera);
+            if (!document.getElementById('modal2D').classList.contains('hidden')) drawProfile2D();
+        });
+
+        document.getElementById('toggleLeftBtn').addEventListener('click', () => { document.getElementById('left-sidebar').classList.toggle('collapsed'); });
+        document.getElementById('toggleRightBtn').addEventListener('click', () => { document.getElementById('right-sidebar').classList.toggle('collapsed'); });
+        document.getElementById('show2DBtn').addEventListener('click', () => { document.getElementById('modal2D').classList.remove('hidden'); drawProfile2D(); });
+        document.getElementById('closeModalBtn').addEventListener('click', () => { document.getElementById('modal2D').classList.add('hidden'); });
+        document.getElementById('updateGraphBtn').addEventListener('click', drawProfile2D);
+        document.getElementById('playBtn').addEventListener('click', (e) => {
+            isPlaying = !isPlaying; 
+            e.target.innerHTML = isPlaying ? "⏸" : "▶";
+            e.target.style.background = isPlaying ? "var(--warning)" : "var(--danger)";
+        });
+        
+        // --- NÚT RESET GÓC NHÌN CAMERA ---
+        document.getElementById('resetCameraBtn').addEventListener('click', () => {
+            camera.position.set(12, 8, 12);
+            controls.target.set(0, 0, 0);
+            controls.update();
+            renderer.render(scene, camera);
+            showToast("Đã đặt lại góc nhìn!");
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const oldBg = scene.background; scene.background = null; renderer.render(scene, camera);
+            const link = document.createElement('a'); link.download = 'NoadDVo-Solid.png'; link.href = renderer.domElement.toDataURL(); link.click();
+            scene.background = oldBg; renderer.render(scene, camera);
+        });
+
+        // --- 6. BỘ ĐẾM TRUY CẬP ---
+        function initVisitorCounter() {
+            const today = new Date().toISOString().slice(0, 10);
+            let visits = localStorage.getItem('noadd_visits_' + today);
+            if (!visits) {
+                visits = Math.floor(Math.random() * 50) + 12; 
+            } else {
+                visits = parseInt(visits, 10);
+            }
+            visits++;
+            localStorage.setItem('noadd_visits_' + today, visits);
+            const visitEl = document.getElementById('daily-visits');
+            if(visitEl) visitEl.innerText = visits;
+        }
+        initVisitorCounter();
+
+        setTimeout(updateGeometry, 500); 
+        function animate() {
+            requestAnimationFrame(animate);
+            if (isPlaying) {
+                const useGlobal = document.getElementById('useGlobalAngle').checked;
+                if (useGlobal) {
+                    let a = parseFloat(document.getElementById('angleSlider').value) + 1.5; if (a > 360) a = 1;
+                    document.getElementById('angleSlider').value = a; 
+                    document.getElementById('angleVal').innerText = Math.floor(a) + "°"; 
+                    updateGeometry();
+                } else {
+                    let changed = false;
+                    ['y', 'x'].forEach(type => {
+                        const cards = document.querySelectorAll(`#${type}-funcs-list .func-card`);
+                        cards.forEach(card => {
+                            const id = card.dataset.id;
+                            if (document.getElementById(`enable_${id}`).checked) {
+                                const slider = document.getElementById(`angle_${id}`);
+                                if (slider) {
+                                    let a = parseFloat(slider.value) + 1.5; if (a > 360) a = 1;
+                                    slider.value = a;
+                                    const valEl = document.getElementById(`angle_val_${id}`);
+                                    if (valEl) valEl.innerText = Math.floor(a) + "°";
+                                    changed = true;
+                                }
+                            }
+                        });
+                    });
+                    if (changed) updateGeometry();
+                }
+            }
+            controls.update(); 
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
